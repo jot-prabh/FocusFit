@@ -1,1 +1,0 @@
-print("FocusFit project starting 🚀")

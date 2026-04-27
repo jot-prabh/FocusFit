@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusFit – Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="dashboard-body">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="brand">🌸 FocusFit</div>
+    <div class="nav-right">
+      <span class="welcome-text">Hi, {{ name }} 👋</span>
+      <a href="/profile" class="logout-btn">Profile</a>
+      <a href="/logout" class="logout-btn">Log out</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <h1 class="page-title">Your <span>Dashboard</span></h1>
+    <div class="streak-box" id="streak-box">🔥 Streak: 0 days</div>
+    <div class="quote-box" id="quote-box">Loading quote...</div>
+    <div class="summary-box" id="summary-box">
+      Today: 0m | Tasks: 0/0 completed | Fitness: Not done
+    </div>
+
+    <!-- cards start -->
+    <div class="card-grid">
+
+      <!-- ── Card 1: Screen Time ───────────────────────────────────────── -->
+      <div class="card card-pink">
+        <div class="card-header">
+          <span class="card-icon">📱</span>
+          <h3 class="card-title">Screen Time</h3>
+        </div>
+
+        <div class="stat-display" id="today-minutes">0m</div>
+        <div class="stat-label">screen time today</div>
+        <span class="ok-badge" id="screen-badge">✅ Looking good</span>
+        <div class="progress-wrap">
+          <div class="progress-label">Daily limit: 120 mins</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="screen-progress"></div>
+          </div>
+        </div>
+        <!-- Quick buttons -->
+        <div class="quick-btns">
+          <button class="quick-btn" onclick="quickLog(30)">30 min</button>
+          <button class="quick-btn" onclick="quickLog(60)">60 min</button>
+          <button class="quick-btn" onclick="quickLog(90)">90 min</button>
+          <button class="quick-btn" onclick="quickLog(120)">120 min</button>
+        </div>
+
+        <!-- Manual input -->
+        <div class="input-row">
+          <input type="number" id="screen-input" placeholder="Custom minutes..." min="0" max="1440" />
+          <button class="btn-green" onclick="logScreenTime()">Log</button>
+        </div>
+
+        <div class="chart-wrapper">
+          <canvas id="screenChart"></canvas>
+        </div>
+      </div>
+
+      <!-- ── Card 2: Study Planner ─────────────────────────────────────── -->
+      <div class="card card-green">
+        <div class="card-header">
+          <span class="card-icon">📚</span>
+          <h3 class="card-title">Study Planner</h3>
+        </div>
+
+        <div class="task-stats" id="task-stats">0 pending tasks</div>
+        <div class="progress-wrap">
+          <div class="progress-label">Task completion</div>
+          <div class="progress-bar">
+            <div class="progress-fill task-fill" id="task-progress"></div>
+          </div>
+        </div>
+        <div class="task-form">
+          <input type="text" id="task-subject" placeholder="Subject (e.g. Math)" />
+          <input type="date" id="task-deadline" />
+          <button class="btn-green" onclick="addTask()">+ Add Task</button>
+        </div>
+
+        <ul class="task-list" id="task-list">
+          <li class="task-empty">No tasks yet. Add one above!</li>
+        </ul>
+      </div>
+
+      <!-- ── Card 3: Fitness ───────────────────────────────────────────── -->
+      <div class="card card-cream">
+        <div class="card-header">
+          <span class="card-icon">🏃</span>
+          <h3 class="card-title">Fitness Break</h3>
+        </div>
+
+        <div class="fitness-suggestion">
+          <div class="exercise-name" id="exercise-name">5-min Stretch</div>
+          <div class="exercise-time" id="exercise-time">Perfect for a quick desk break</div>
+        </div>
+
+        <!-- Timer display -->
+        <div class="timer-display" id="timer-display" style="display:none;">
+          <span id="timer-count">00:00</span>
+        </div>
+
+        <div class="fitness-btns">
+          <button class="btn-green" onclick="nextExercise()">Next 🔄</button>
+          <button class="btn-pink" id="timer-btn" onclick="startTimer()">Start Timer ⏱️</button>
+          <button class="btn-small" onclick="markFitnessDone()">Mark Done ✅</button>
+        </div>
+
+        <div class="fitness-status" id="fitness-status">Not started today</div>
+      </div>
+
+      <!-- ── Card 4: Recommendation ────────────────────────────────────── -->
+      <div class="card card-highlight">
+        <div class="card-header">
+          <span class="card-icon">🧠</span>
+          <h3 class="card-title">Recommended for You</h3>
+        </div>
+        <div class="recommendation-text" id="recommendation-text">
+          Loading your recommendation...
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-light);margin-top:1rem;">
+          Updates based on your screen time, tasks & fitness.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+
+    // ════════════════════════════════════════════════════════════════════════
+    // TOAST
+    // ════════════════════════════════════════════════════════════════════════
+    function showToast(msg) {
+      var t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(function () { t.classList.remove("show"); }, 2500);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SOUNDS (Web Audio API — no file needed, works in browser)
+    // ════════════════════════════════════════════════════════════════════════
+    function playSound(type) {
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === "task") {
+          // Happy chime — two rising notes
+          osc.frequency.setValueAtTime(523, ctx.currentTime);        // C5
+          osc.frequency.setValueAtTime(659, ctx.currentTime + 0.15); // E5
+          osc.frequency.setValueAtTime(784, ctx.currentTime + 0.3);  // G5
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.6);
+        } else if (type === "timer") {
+          // Timer done — three beeps
+          [0, 0.25, 0.5].forEach(function (delay) {
+            var o = ctx.createOscillator();
+            var g = ctx.createGain();
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.frequency.value = 880; // A5
+            g.gain.setValueAtTime(0.3, ctx.currentTime + delay);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.2);
+            o.start(ctx.currentTime + delay);
+            o.stop(ctx.currentTime + delay + 0.2);
+          });
+        }
+      } catch (e) {
+        console.log("Sound not supported:", e);
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SCREEN TIME
+    // ════════════════════════════════════════════════════════════════════════
+    var screenChart = null;
+
+    function quickLog(mins) {
+      sendScreenTime(mins);
+    }
+
+    function logScreenTime() {
+      var input = document.getElementById("screen-input");
+      var mins = parseInt(input.value);
+
+      if (!input.value || isNaN(mins) || mins <= 0) {
+        showToast("Enter a valid number of minutes!");
+        return;
+      }
+
+      if (mins > 1440) {
+        showToast("You cannot log more than 24 hours in one day.");
+        return;
+      }
+
+      sendScreenTime(mins);
+      input.value = "";
+    }
+
+    function sendScreenTime(mins) {
+      fetch("/api/screen-time", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ minutes: mins })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.error) {
+            showToast(data.error);
+            return;
+          }
+
+          // ❗ HARD LIMIT CHECK
+          if (data.today >= 1440) {
+            showToast("You already reached maximum 24h for today 🚫");
+            updateScreenCard(data.log, 1440);
+            return;
+          }
+
+          updateScreenCard(data.log, data.today);
+          showToast("Logged " + formatTime(mins) + " of screen time 📱");
+          loadRecommendation();
+        })
+        .catch(function (e) {
+          console.error(e);
+          showToast("Error logging screen time");
+        });
+    }
+
+    function formatTime(mins) {
+      mins = parseInt(mins) || 0;
+
+      var hours = Math.floor(mins / 60);
+      var minutes = mins % 60;
+
+      if (hours > 0 && minutes > 0) {
+        return hours + "h " + minutes + "m";
+      } else if (hours > 0) {
+        return hours + "h";
+      } else {
+        return minutes + "m";
+      }
+    }
+
+    function updateSummary() {
+      var todayText = document.getElementById("today-minutes").textContent;
+
+      var taskArray = window.latestTasks || [];
+      var totalTasks = taskArray.length;
+      var completedTasks = taskArray.filter(function (t) {
+        return t.status === "completed";
+      }).length;
+
+      var fitnessText = document.getElementById("fitness-status")
+        ? document.getElementById("fitness-status").textContent
+        : "Not done";
+
+      var fitnessDone = fitnessText.includes("Completed") ? "Done" : "Not done";
+
+      var summary = document.getElementById("summary-box");
+      if (summary) {
+        summary.textContent =
+          "Today: " + todayText +
+          " | Tasks: " + completedTasks + "/" + totalTasks + " completed" +
+          " | Fitness: " + fitnessDone;
+      }
+    }
+
+    function updateScreenCard(log, today) {
+      today = Math.min(today, 1440);  // 🔥 clamp to 24h
+      document.getElementById("today-minutes").textContent = formatTime(today);
+
+      var badge = document.getElementById("screen-badge");
+      var progress = document.getElementById("screen-progress");
+
+      var percent = Math.min((today / 1440) * 100, 100);
+
+      if (progress) {
+        progress.style.width = percent + "%";
+        progress.className = "progress-fill";
+
+        if (today > 360) {
+          progress.classList.add("danger-fill");
+        }
+      }
+
+      if (today > 600) {
+        badge.className = "warning-badge";
+        badge.textContent = "🚨 Very high – reduce screen time!";
+      } else if (today > 360) {
+        badge.className = "warning-badge";
+        badge.textContent = "⚠️ High usage – take a break!";
+      } else if (today > 120) {
+        badge.className = "warning-badge";
+        badge.textContent = "🙁 Getting high – slow down";
+      } else {
+        badge.className = "ok-badge";
+        badge.textContent = "✅ Looking good";
+      }
+
+      var labels = log.map(function (r, i) {
+        return r.logged_on || ("Day " + (i + 1));
+      });
+
+      var values = log.map(function (r) {
+        return r.minutes;
+      });
+
+      if (!labels.length) {
+        labels = ["No data"];
+        values = [0];
+      }
+
+      if (screenChart) {
+        screenChart.data.labels = labels;
+        screenChart.data.datasets[0].data = values;
+        screenChart.update();
+      } else {
+        var ctx = document.getElementById("screenChart").getContext("2d");
+        screenChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Screen Time",
+              data: values,
+              borderColor: "#e88fa0",
+              backgroundColor: "rgba(247,197,208,0.25)",
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: "#e88fa0",
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return formatTime(context.raw);
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return formatTime(value);
+                  }
+                }
+              },
+              x: {
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      }
+
+      updateSummary();
+    }
+
+    function loadScreenTime() {
+      fetch("/api/screen-time")
+        .then(function (r) { return r.json(); })
+        .then(function (d) { updateScreenCard(d.log, d.today); })
+        .catch(function (e) { console.error("loadScreenTime:", e); });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // TASKS
+    // ════════════════════════════════════════════════════════════════════════
+    function addTask() {
+      var subject = document.getElementById("task-subject").value.trim();
+      var deadline = document.getElementById("task-deadline").value;
+      if (!subject) { showToast("Please enter a subject!"); return; }
+      if (!deadline) { showToast("Please pick a deadline!"); return; }
+
+      fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: subject, deadline: deadline })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          renderTasks(d.tasks);
+          document.getElementById("task-subject").value = "";
+          document.getElementById("task-deadline").value = "";
+          showToast("Task added! 📚");
+          loadRecommendation();
+        })
+        .catch(function (e) { console.error(e); });
+    }
+
+    function completeTask(taskId) {
+      // Instantly update UI — don't wait for server
+      var item = document.querySelector("[data-task-id='" + taskId + "']");
+      if (item) {
+        item.className = "task-item task-completed";
+        var btn = item.querySelector("button");
+        if (btn) btn.outerHTML = "<span class='task-status-label'>✅ completed</span>";
+      }
+      playSound("task");
+      showToast("Task completed! ✅");
+
+      // Then sync with server in background
+      fetch("/api/tasks/" + taskId + "/complete", { method: "POST" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          renderTasks(d.tasks);  // re-render with server confirmed data
+          loadRecommendation();
+          loadStreak();
+        })
+        .catch(function (e) { console.error(e); });
+    }
+
+    function renderTasks(taskArray) {
+      window.latestTasks = taskArray || [];
+      var list = document.getElementById("task-list");
+      var stats = document.getElementById("task-stats");
+      var taskProgress = document.getElementById("task-progress");
+
+      list.innerHTML = "";
+
+      if (!taskArray || taskArray.length === 0) {
+        list.innerHTML = '<li class="task-empty">No tasks yet. Add one above!</li>';
+        stats.textContent = "0 pending tasks";
+        if (taskProgress) taskProgress.style.width = "0%";
+        return;
+      }
+
+      var pending = taskArray.filter(function (t) { return t.status === "pending"; }).length;
+      var completed = taskArray.filter(function (t) { return t.status === "completed"; }).length;
+      var total = taskArray.length;
+      var completionPercent = Math.round((completed / total) * 100);
+
+      stats.textContent = pending + " pending | " + completed + "/" + total + " completed";
+
+      if (taskProgress) {
+        taskProgress.style.width = completionPercent + "%";
+      }
+
+      taskArray.forEach(function (task) {
+        var li = document.createElement("li");
+        li.className = "task-item task-" + task.status;
+        li.setAttribute("data-task-id", task.id);
+
+        var statusIcon = "";
+        if (task.status === "completed") statusIcon = "✅";
+        if (task.status === "missed") statusIcon = "❌";
+        if (task.status === "pending") statusIcon = "⏳";
+
+        li.innerHTML =
+          '<span class="task-name">' + statusIcon + " " + task.subject + '</span>' +
+          '<span class="task-deadline">' + task.deadline + '</span>' +
+          (task.status === "pending"
+            ? '<button class="btn-small" onclick="completeTask(' + task.id + ')">Done</button>'
+            : '<button class="btn-small" onclick="rescheduleTask(' + task.id + ')">Reschedule</button>') +
+          '<button class="delete-btn" onclick="deleteTask(' + task.id + ')">✕</button>';
+
+        list.appendChild(li);
+      });
+      updateSummary();
+    }
+
+    function loadTasks() {
+      fetch("/api/tasks")
+        .then(function (r) { return r.json(); })
+        .then(function (d) { renderTasks(d.tasks); })
+        .catch(function (e) { console.error("loadTasks:", e); });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // FITNESS
+    // ════════════════════════════════════════════════════════════════════════
+    var exercises = [
+      { name: "5-min Stretch", time: "Perfect for a quick desk break", duration: 300 },
+      { name: "10-min Walk", time: "Step outside for fresh air", duration: 600 },
+      { name: "Desk Yoga", time: "Gentle seated stretches", duration: 300 },
+      { name: "20 Jumping Jacks", time: "Get the blood flowing!", duration: 120 },
+      { name: "Deep Breathing", time: "4-7-8 technique, 5 cycles", duration: 180 },
+      { name: "Eye Rest", time: "20-20-20 rule – look 20ft away", duration: 60 },
+      { name: "Neck Rolls", time: "Release tension in 2 minutes", duration: 120 },
+      { name: "Wall Push-ups", time: "10 reps, great for a quick reset", duration: 60 }
+    ];
+    var currentEx = 0;
+    var timerInt = null;
+    var timerSecs = 0;
+
+    function nextExercise() {
+      currentEx = (currentEx + 1) % exercises.length;
+      var ex = exercises[currentEx];
+      document.getElementById("exercise-name").textContent = ex.name;
+      document.getElementById("exercise-time").textContent = ex.time;
+      stopTimer();
+      showToast("Next: " + ex.name + " 🌿");
+    }
+
+    function startTimer() {
+      if (timerInt) { stopTimer(); return; }
+      timerSecs = exercises[currentEx].duration;
+      document.getElementById("timer-display").style.display = "block";
+      document.getElementById("timer-btn").textContent = "Stop ⏹️";
+
+      timerInt = setInterval(function () {
+        timerSecs--;
+        var m = Math.floor(timerSecs / 60);
+        var s = timerSecs % 60;
+        document.getElementById("timer-count").textContent =
+          (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+        if (timerSecs <= 0) {
+          stopTimer();
+          playSound("timer");
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInt);
+      timerInt = null;
+      document.getElementById("timer-display").style.display = "none";
+      document.getElementById("timer-btn").textContent = "Start Timer ⏱️";
+    }
+
+    function markFitnessDone() {
+      var exName = exercises[currentEx].name;
+      fetch("/api/fitness", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ exercise: exName })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          // immediately complete the just-added entry
+          if (d.fitness && d.fitness.length > 0) {
+            var latest = d.fitness[0];
+            return fetch("/api/fitness/" + latest.id + "/complete", { method: "POST" });
+          }
+        })
+        .then(function (r) { if (r) return r.json(); })
+        .then(function (d) {
+          stopTimer();
+          document.getElementById("fitness-status").textContent = "✅ Completed today!";
+          document.getElementById("fitness-status").style.color = "#7bb877";
+          showToast(exName + " marked as done! 💪");
+          loadRecommendation();
+          loadStreak();
+        })
+        .catch(function (e) { console.error(e); });
+    }
+
+    function loadFitness() {
+      fetch("/api/fitness")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var statusEl = document.getElementById("fitness-status");
+          var done = d.fitness && d.fitness.some(function (f) { return f.status === "completed"; });
+          if (done) {
+            statusEl.textContent = "✅ Completed today!";
+            statusEl.style.color = "#7bb877";
+          } else {
+            statusEl.textContent = "Not started today";
+            statusEl.style.color = "";
+          }
+          updateSummary();
+        })
+        .catch(function (e) { console.error("loadFitness:", e); });
+
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // RECOMMENDATION
+    // ════════════════════════════════════════════════════════════════════════
+    function loadRecommendation() {
+      fetch("/api/recommendation")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          document.getElementById("recommendation-text").textContent = d.recommendation;
+        })
+        .catch(function (e) { console.error("loadRecommendation:", e); });
+    }
+
+    function deleteTask(taskId) {
+      if (!confirm("Delete this task?")) return;
+
+      fetch("/api/tasks/" + taskId + "/delete", { method: "POST" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          renderTasks(d.tasks);
+          showToast("Task deleted");
+          loadRecommendation();
+        })
+        .catch(function (e) { console.error(e); });
+    }
+
+
+    function rescheduleTask(taskId) {
+      var newDate = prompt("Enter new deadline in YYYY-MM-DD format:");
+
+      if (!newDate) return;
+
+      fetch("/api/tasks/" + taskId + "/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deadline: newDate })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          renderTasks(d.tasks);
+          showToast("Task rescheduled");
+          loadRecommendation();
+        })
+        .catch(function (e) { console.error(e); });
+    }
+
+
+    function loadQuote() {
+      var quotes = [
+        "Small steps every day lead to big results.",
+        "Focus on progress, not perfection.",
+        "Your future self will thank you.",
+        "Discipline beats motivation.",
+        "One focused hour is better than five distracted hours.",
+        "Take care of your mind and body together."
+      ];
+
+      var today = new Date();
+      var index = today.getDate() % quotes.length;
+
+      document.getElementById("quote-box").textContent = "💡 " + quotes[index];
+    }
+
+    function loadStreak() {
+      fetch("/api/streak")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var box = document.getElementById("streak-box");
+          if (box) {
+            box.textContent = "🔥 Streak: " + d.streak + " day" + (d.streak !== 1 ? "s" : "");
+          }
+        })
+        .catch(function (e) { console.error("loadStreak:", e); });
+    }
+    // ════════════════════════════════════════════════════════════════════════
+    // INIT — runs when page loads
+    // ════════════════════════════════════════════════════════════════════════
+    window.onload = function () {
+      loadQuote();
+      loadScreenTime();
+      loadTasks();
+      loadFitness();
+      loadRecommendation();
+      loadStreak();
+    };
+
+  </script>
+</body>
+
+</html>
