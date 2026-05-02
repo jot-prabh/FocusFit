@@ -4,680 +4,781 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FocusFit – Dashboard</title>
+  <title>FocusFit – Smart Focus & Wellness</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="dashboard-body">
-
-  <!-- Navbar -->
   <nav class="navbar">
-    <div class="brand">🌸 FocusFit</div>
+    <div class="brand">FocusFit</div>
     <div class="nav-right">
       <span class="welcome-text">Hi, {{ name }} 👋</span>
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
+      <button class="theme-toggle" onclick="toggleSmartReminders()" id="reminder-btn">🔔 Smart Reminders</button>
       <a href="/profile" class="logout-btn">Profile</a>
       <a href="/logout" class="logout-btn">Log out</a>
     </div>
   </nav>
 
-  <div class="main-content">
-    <h1 class="page-title">Your <span>Dashboard</span></h1>
-    <div class="streak-box" id="streak-box">🔥 Streak: 0 days</div>
-    <div class="quote-box" id="quote-box">Loading quote...</div>
-    <div class="summary-box" id="summary-box">
-      Today: 0m | Tasks: 0/0 completed | Fitness: Not done
-    </div>
+  <main class="main-content">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Smart personalized focus & wellness system</p>
+        <h1>Simple focus. Better breaks. Healthier screen time.</h1>
+        <p id="personal-message">Preparing your personalized dashboard...</p>
+      </div>
 
-    <!-- cards start -->
-    <div class="card-grid">
+      <div class="hero-stats">
+        <div><strong id="xp-value">0</strong><span>XP</span></div>
+        <div><strong id="level-value">Beginner</strong><span>Level</span></div>
+        <div><strong id="streak-value">0</strong><span>Streak</span></div>
+      </div>
+    </section>
 
-      <!-- ── Card 1: Screen Time ───────────────────────────────────────── -->
-      <div class="card card-pink">
-        <div class="card-header">
-          <span class="card-icon">📱</span>
-          <h3 class="card-title">Screen Time</h3>
+    <div class="summary-box" id="summary-box">Today: 0m | Tasks: 0/0 completed | Fitness: Not done</div>
+
+    <div class="dashboard-stack">
+      <section class="card card-wide">
+        <div class="card-header"><span class="card-icon">📱</span>
+          <h3>Screen Time</h3>
         </div>
-
-        <div class="stat-display" id="today-minutes">0m</div>
-        <div class="stat-label">screen time today</div>
-        <span class="ok-badge" id="screen-badge">✅ Looking good</span>
-        <div class="progress-wrap">
-          <div class="progress-label">Daily limit: 120 mins</div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="screen-progress"></div>
+        <div class="screen-layout">
+          <div>
+            <div class="stat-display" id="today-minutes">0m</div>
+            <div class="stat-label">screen time today</div>
+            <span class="ok-badge" id="screen-badge">✅ Looking good</span>
+            <div class="progress-wrap">
+              <div class="progress-label" id="screen-limit-label">Personal safe limit: loading...</div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="screen-progress"></div>
+              </div>
+            </div>
+            <div class="quick-btns">
+              <button class="quick-btn" onclick="quickLog(30)">30 min</button>
+              <button class="quick-btn" onclick="quickLog(60)">60 min</button>
+              <button class="quick-btn" onclick="quickLog(90)">90 min</button>
+              <button class="quick-btn" onclick="quickLog(120)">120 min</button>
+            </div>
+            <div class="input-row">
+              <input type="number" id="screen-input" placeholder="Custom minutes..." min="1" max="1440" />
+              <button class="btn-primary-small" onclick="logScreenTime()">Log</button>
+            </div>
           </div>
+          <div class="chart-wrapper"><canvas id="screenChart"></canvas></div>
         </div>
-        <!-- Quick buttons -->
-        <div class="quick-btns">
-          <button class="quick-btn" onclick="quickLog(30)">30 min</button>
-          <button class="quick-btn" onclick="quickLog(60)">60 min</button>
-          <button class="quick-btn" onclick="quickLog(90)">90 min</button>
-          <button class="quick-btn" onclick="quickLog(120)">120 min</button>
-        </div>
+      </section>
 
-        <!-- Manual input -->
-        <div class="input-row">
-          <input type="number" id="screen-input" placeholder="Custom minutes..." min="0" max="1440" />
-          <button class="btn-green" onclick="logScreenTime()">Log</button>
+      <section class="card card-highlight card-wide">
+        <div class="card-header"><span class="card-icon">🧠</span>
+          <h3>Recommended for You</h3>
         </div>
-
-        <div class="chart-wrapper">
-          <canvas id="screenChart"></canvas>
+        <div class="recommendation-text" id="recommendation-text">Loading recommendation...</div>
+        <p class="small-muted mood-title">How are you feeling?</p>
+        <div class="mood-row">
+          <button data-mood="tired" onclick="saveCheckin('tired')">😴 Tired</button>
+          <button data-mood="normal" onclick="saveCheckin('normal')">😐 Normal</button>
+          <button data-mood="distracted" onclick="saveCheckin('distracted')">😵 Distracted</button>
+          <button data-mood="focused" onclick="saveCheckin('focused')">💪 Focused</button>
         </div>
-      </div>
+        <div class="mini-status" id="checkin-status">Mood not selected yet</div>
+      </section>
 
-      <!-- ── Card 2: Study Planner ─────────────────────────────────────── -->
-      <div class="card card-green">
-        <div class="card-header">
-          <span class="card-icon">📚</span>
-          <h3 class="card-title">Study Planner</h3>
-        </div>
-
-        <div class="task-stats" id="task-stats">0 pending tasks</div>
-        <div class="progress-wrap">
-          <div class="progress-label">Task completion</div>
-          <div class="progress-bar">
-            <div class="progress-fill task-fill" id="task-progress"></div>
+      <div class="card-grid clean-grid">
+        <section class="card">
+          <div class="card-header"><span class="card-icon">📚</span>
+            <h3>Study Planner</h3>
           </div>
-        </div>
-        <div class="task-form">
-          <input type="text" id="task-subject" placeholder="Subject (e.g. Math)" />
-          <input type="date" id="task-deadline" />
-          <button class="btn-green" onclick="addTask()">+ Add Task</button>
-        </div>
+          <div class="task-stats" id="task-stats">0 pending tasks</div>
+          <div class="progress-wrap">
+            <div class="progress-label">Task completion</div>
+            <div class="progress-bar">
+              <div class="progress-fill task-fill" id="task-progress"></div>
+            </div>
+          </div>
+          <div class="task-form">
+            <label for="task-subject" class="sr-only">Task or Subject</label>
+            <input type="text" id="task-subject" placeholder="Task / Subject" />
+            <label for="task-deadline" class="sr-only">Task Deadline</label>
+            <input type="date" id="task-deadline" />
+            <button class="btn-primary-small" onclick="addTask()">+ Add</button>
+          </div>
+          <ul class="task-list" id="task-list">
+            <li class="task-empty">No tasks yet. Add one above!</li>
+          </ul>
+        </section>
 
-        <ul class="task-list" id="task-list">
-          <li class="task-empty">No tasks yet. Add one above!</li>
-        </ul>
+        <section class="card">
+          <div class="card-header"><span class="card-icon">🏃</span>
+            <h3>Fitness Break</h3>
+          </div>
+          <div class="fitness-suggestion">
+            <div class="exercise-name" id="exercise-name">5-min Stretch</div>
+            <div class="exercise-time" id="exercise-time">Stretch neck, shoulders and back.</div>
+          </div>
+          <div class="timer-display hidden" id="timer-display"><span id="timer-count">00:00</span></div>
+          <div class="fitness-btns">
+            <button class="btn-primary-small" onclick="nextExercise()">Next</button>
+            <button class="btn-accent" id="timer-btn" onclick="startTimer()">Start Timer</button>
+          </div>
+          <div class="fitness-status" id="fitness-status">Complete the timer to mark fitness done</div>
+        </section>
+
+        <section class="card" id="focus-card">
+          <div class="card-header"><span class="card-icon">🎯</span>
+            <h3>Study Focus Timer</h3>
+          </div>
+          <div class="focus-time" id="focus-time">25:00</div>
+          <p class="small-muted">Shown only for study/work focused users.</p>
+          <div class="fitness-btns">
+            <button class="btn-primary-small" onclick="startFocusMode()">Start Focus</button>
+            <button class="btn-danger" onclick="stopFocusMode()">Stop</button>
+            <button class="btn-outline" onclick="resetFocusMode()">Reset</button>
+          </div>
+          <div class="mini-status" id="focus-status">No focus session completed yet</div>
+        </section>
+
+        <section class="card report-card">
+          <div class="card-header"><span class="card-icon">📊</span>
+            <h3>Weekly Report</h3>
+          </div>
+          <div class="report-grid">
+            <div><strong id="avg-screen">0m</strong><span>Avg screen/day</span></div>
+            <div><strong id="weekly-tasks">0</strong><span>Tasks done</span></div>
+            <div><strong id="weekly-fitness">0</strong><span>Fitness done</span></div>
+            <div id="weekly-focus-wrap"><strong id="weekly-focus">0m</strong><span>Focus time</span></div>
+          </div>
+        </section>
       </div>
-
-      <!-- ── Card 3: Fitness ───────────────────────────────────────────── -->
-      <div class="card card-cream">
-        <div class="card-header">
-          <span class="card-icon">🏃</span>
-          <h3 class="card-title">Fitness Break</h3>
-        </div>
-
-        <div class="fitness-suggestion">
-          <div class="exercise-name" id="exercise-name">5-min Stretch</div>
-          <div class="exercise-time" id="exercise-time">Perfect for a quick desk break</div>
-        </div>
-
-        <!-- Timer display -->
-        <div class="timer-display" id="timer-display" style="display:none;">
-          <span id="timer-count">00:00</span>
-        </div>
-
-        <div class="fitness-btns">
-          <button class="btn-green" onclick="nextExercise()">Next 🔄</button>
-          <button class="btn-pink" id="timer-btn" onclick="startTimer()">Start Timer ⏱️</button>
-          <button class="btn-small" onclick="markFitnessDone()">Mark Done ✅</button>
-        </div>
-
-        <div class="fitness-status" id="fitness-status">Not started today</div>
-      </div>
-
-      <!-- ── Card 4: Recommendation ────────────────────────────────────── -->
-      <div class="card card-highlight">
-        <div class="card-header">
-          <span class="card-icon">🧠</span>
-          <h3 class="card-title">Recommended for You</h3>
-        </div>
-        <div class="recommendation-text" id="recommendation-text">
-          Loading your recommendation...
-        </div>
-        <p style="font-size:0.78rem;color:var(--text-light);margin-top:1rem;">
-          Updates based on your screen time, tasks & fitness.
-        </p>
-      </div>
-
     </div>
-  </div>
+  </main>
 
-  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
   <script>
+    let screenChart = null;
+    let latestTasks = [];
+    let latestFitnessDone = false;
+    let latestTodayMinutes = 0;
+    let latestLimits = { safe: 120, high: 240, very_high: 360 };
+    let latestProfile = {};
+    let smartReminderInterval = null;
+    let latestShowFocus = true;
 
-    // ════════════════════════════════════════════════════════════════════════
-    // TOAST
-    // ════════════════════════════════════════════════════════════════════════
-    function showToast(msg) {
-      var t = document.getElementById("toast");
-      t.textContent = msg;
-      t.classList.add("show");
-      setTimeout(function () { t.classList.remove("show"); }, 2500);
-    }
+    const exercises = [
+      { name: "5-min Stretch", time: "Stretch neck, shoulders and back.", duration: 300 },
+      { name: "Eye Rest", time: "20-20-20 rule: look far away.", duration: 60 },
+      { name: "Deep Breathing", time: "4-7-8 breathing for calm focus.", duration: 180 },
+      { name: "10 Squats", time: "Quick lower-body activation.", duration: 120 },
+      { name: "7-min Walk", time: "Move away from the screen.", duration: 420 }
+    ];
 
-    // ════════════════════════════════════════════════════════════════════════
-    // SOUNDS (Web Audio API — no file needed, works in browser)
-    // ════════════════════════════════════════════════════════════════════════
-    function playSound(type) {
-      try {
-        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+    let currentExercise = 0;
+    let fitnessTimer = null;
+    let fitnessSeconds = 0;
+    let focusTimer = null;
+    let focusSeconds = 25 * 60;
+    let audioContext = null;
 
-        if (type === "task") {
-          // Happy chime — two rising notes
-          osc.frequency.setValueAtTime(523, ctx.currentTime);        // C5
-          osc.frequency.setValueAtTime(659, ctx.currentTime + 0.15); // E5
-          osc.frequency.setValueAtTime(784, ctx.currentTime + 0.3);  // G5
-          gain.gain.setValueAtTime(0.3, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-          osc.start(ctx.currentTime);
-          osc.stop(ctx.currentTime + 0.6);
-        } else if (type === "timer") {
-          // Timer done — three beeps
-          [0, 0.25, 0.5].forEach(function (delay) {
-            var o = ctx.createOscillator();
-            var g = ctx.createGain();
-            o.connect(g);
-            g.connect(ctx.destination);
-            o.frequency.value = 880; // A5
-            g.gain.setValueAtTime(0.3, ctx.currentTime + delay);
-            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.2);
-            o.start(ctx.currentTime + delay);
-            o.stop(ctx.currentTime + delay + 0.2);
-          });
-        }
-      } catch (e) {
-        console.log("Sound not supported:", e);
+    // Initialize audio on first click
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
       }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // SCREEN TIME
-    // ════════════════════════════════════════════════════════════════════════
-    var screenChart = null;
-
-    function quickLog(mins) {
-      sendScreenTime(mins);
-    }
-
-    function logScreenTime() {
-      var input = document.getElementById("screen-input");
-      var mins = parseInt(input.value);
-
-      if (!input.value || isNaN(mins) || mins <= 0) {
-        showToast("Enter a valid number of minutes!");
-        return;
-      }
-
-      if (mins > 1440) {
-        showToast("You cannot log more than 24 hours in one day.");
-        return;
-      }
-
-      sendScreenTime(mins);
-      input.value = "";
-    }
-
-    function sendScreenTime(mins) {
-      fetch("/api/screen-time", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ minutes: mins })
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.error) {
-            showToast(data.error);
-            return;
-          }
-
-          // ❗ HARD LIMIT CHECK
-          if (data.today >= 1440) {
-            showToast("You already reached maximum 24h for today 🚫");
-            updateScreenCard(data.log, 1440);
-            return;
-          }
-
-          updateScreenCard(data.log, data.today);
-          showToast("Logged " + formatTime(mins) + " of screen time 📱");
-          loadRecommendation();
-        })
-        .catch(function (e) {
-          console.error(e);
-          showToast("Error logging screen time");
-        });
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2600);
     }
 
     function formatTime(mins) {
-      mins = parseInt(mins) || 0;
+      mins = parseInt(mins || 0);
+      const h = Math.floor(mins / 60), m = mins % 60;
+      if (h && m) return `${h}h ${m}m`;
+      if (h) return `${h}h`;
+      return `${m}m`;
+    }
 
-      var hours = Math.floor(mins / 60);
-      var minutes = mins % 60;
+    function formatClock(seconds) {
+      const m = Math.floor(seconds / 60), s = seconds % 60;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
 
-      if (hours > 0 && minutes > 0) {
-        return hours + "h " + minutes + "m";
-      } else if (hours > 0) {
-        return hours + "h";
+    function applyTheme() {
+      const saved = localStorage.getItem("focusfit-theme");
+      const btn = document.getElementById("theme-btn");
+      document.body.classList.toggle("dark-mode", saved === "dark");
+      if (btn) btn.textContent = saved === "dark" ? "☀️ Light" : "🌙 Dark";
+    }
+
+    function toggleTheme() {
+      const next = document.body.classList.contains("dark-mode") ? "light" : "dark";
+      localStorage.setItem("focusfit-theme", next);
+      applyTheme();
+      loadScreenTime();
+    }
+
+    function updateReminderButton() {
+      const btn = document.getElementById("reminder-btn");
+      if (!btn) return;
+      const enabled = localStorage.getItem("focusfit-smart-reminders") === "on";
+      btn.textContent = enabled ? "🔔 Reminders On" : "🔔 Smart Reminders";
+    }
+
+    function toggleSmartReminders() {
+      const enabled = localStorage.getItem("focusfit-smart-reminders") === "on";
+
+      if (enabled) {
+        localStorage.setItem("focusfit-smart-reminders", "off");
+        clearInterval(smartReminderInterval);
+        smartReminderInterval = null;
+        updateReminderButton();
+        showToast("Smart reminders turned off.");
+        return;
+      }
+
+      localStorage.setItem("focusfit-smart-reminders", "on");
+      updateReminderButton();
+
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().then(() => {
+          startSmartReminderLoop();
+          sendSmartReminder(true);
+        });
       } else {
-        return minutes + "m";
+        startSmartReminderLoop();
+        sendSmartReminder(true);
+      }
+    }
+
+    function startSmartReminderLoop() {
+      clearInterval(smartReminderInterval);
+      if (localStorage.getItem("focusfit-smart-reminders") !== "on") return;
+
+      smartReminderInterval = setInterval(() => {
+        sendSmartReminder(false);
+      }, 60 * 1000);
+    }
+
+    function getSmartReminderMessage() {
+      const pending = latestTasks.filter(t => t.status === "pending").length;
+      const completed = latestTasks.filter(t => t.status === "completed").length;
+
+      if (latestTodayMinutes >= latestLimits.high) {
+        return {
+          type: "break",
+          title: "Time for a break",
+          body: "You've been on screen a lot today. Take a short break 💙"
+        };
+      }
+
+      if (pending > 0) {
+        return {
+          type: "task",
+          title: "Study planner",
+          body: `You still have ${pending} task${pending > 1 ? "s" : ""} left today. Finish one small task 📚`
+        };
+      }
+
+      if (!latestFitnessDone) {
+        return {
+          type: "fitness",
+          title: "Fitness break",
+          body: "Let's move a bit today. Even 5 minutes helps 🏃"
+        };
+      }
+
+      return {
+        type: "daily",
+        title: "FocusFit check-in",
+        body: completed > 0 ? "Nice progress today. Keep your streak alive 🔥" : "Log your screen time and plan your day 👀"
+      };
+    }
+
+    function sendSmartReminder(forceNow) {
+      if (localStorage.getItem("focusfit-smart-reminders") !== "on") return;
+
+      const reminder = getSmartReminderMessage();
+      const cooldownKey = "focusfit-reminder-" + reminder.type;
+      const now = Date.now();
+      const lastSent = parseInt(localStorage.getItem(cooldownKey) || "0");
+      const cooldown = 30 * 60 * 1000;
+
+      if (!forceNow && now - lastSent < cooldown) return;
+
+      localStorage.setItem(cooldownKey, String(now));
+      showToast(reminder.body);
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(reminder.title, { body: reminder.body });
+      }
+    }
+
+    function dailyVisitReminder() {
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem("focusfit-last-visit") !== today) {
+        showToast("Welcome back! Log screen time and pick your mood.");
+        localStorage.setItem("focusfit-last-visit", today);
+      }
+    }
+
+    async function loadDashboardSummary() {
+      try {
+        const res = await fetch("/api/dashboard-summary");
+        if (!res.ok) throw new Error("Failed to load dashboard");
+        const data = await res.json();
+        document.getElementById("xp-value").textContent = data.xp;
+        document.getElementById("level-value").textContent = data.level;
+        document.getElementById("streak-value").textContent = data.streak;
+        document.getElementById("avg-screen").textContent = formatTime(data.weekly_report.avg_screen_minutes);
+        document.getElementById("weekly-tasks").textContent = data.weekly_report.tasks_completed;
+        document.getElementById("weekly-fitness").textContent = data.weekly_report.fitness_completed;
+        document.getElementById("weekly-focus").textContent = formatTime(data.weekly_report.focus_minutes);
+        if (data.checkin) updateMoodUI(data.checkin.mood);
+        if (data.focus_today > 0 && latestShowFocus) {
+          document.getElementById("focus-status").textContent = "Focus completed today: " + formatTime(data.focus_today);
+        }
+        updateSummary();
+      } catch (error) {
+        console.error("Dashboard error:", error);
+        showToast("⚠️ Could not load dashboard data");
       }
     }
 
     function updateSummary() {
-      var todayText = document.getElementById("today-minutes").textContent;
+      const total = latestTasks.length;
+      const completed = latestTasks.filter(t => t.status === "completed").length;
+      const fitness = latestFitnessDone ? "Done" : "Not done";
+      document.getElementById("summary-box").textContent = `Today: ${formatTime(latestTodayMinutes)} | Tasks: ${completed}/${total} completed | Fitness: ${fitness}`;
+    }
 
-      var taskArray = window.latestTasks || [];
-      var totalTasks = taskArray.length;
-      var completedTasks = taskArray.filter(function (t) {
-        return t.status === "completed";
-      }).length;
+    function quickLog(mins) { sendScreenTime(mins); }
 
-      var fitnessText = document.getElementById("fitness-status")
-        ? document.getElementById("fitness-status").textContent
-        : "Not done";
+    function logScreenTime() {
+      const input = document.getElementById("screen-input");
+      const mins = parseInt(input.value);
+      if (!input.value || isNaN(mins) || mins <= 0) return showToast("Enter valid minutes.");
+      sendScreenTime(mins);
+      input.value = "";
+    }
 
-      var fitnessDone = fitnessText.includes("Completed") ? "Done" : "Not done";
-
-      var summary = document.getElementById("summary-box");
-      if (summary) {
-        summary.textContent =
-          "Today: " + todayText +
-          " | Tasks: " + completedTasks + "/" + totalTasks + " completed" +
-          " | Fitness: " + fitnessDone;
+    async function sendScreenTime(mins) {
+      try {
+        const res = await fetch("/api/screen-time", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: mins })
+        });
+        const data = await res.json();
+        if (data.error) return showToast(data.error);
+        updateScreenCard(data.log, data.today, data.limits);
+        showToast("Screen time logged.");
+        loadRecommendation();
+        loadDashboardSummary();
+      } catch (error) {
+        console.error("Screen time error:", error);
+        showToast("⚠️ Failed to log screen time");
       }
     }
 
-    function updateScreenCard(log, today) {
-      today = Math.min(today, 1440);  // 🔥 clamp to 24h
+    async function loadScreenTime() {
+      try {
+        const res = await fetch("/api/screen-time");
+        const data = await res.json();
+        updateScreenCard(data.log, data.today, data.limits);
+      } catch (error) {
+        console.error("Load screen time error:", error);
+        showToast("⚠️ Could not load screen time");
+      }
+    }
+
+    function updateScreenCard(log, today, limits) {
+      latestTodayMinutes = today;
+      latestLimits = limits || latestLimits;
       document.getElementById("today-minutes").textContent = formatTime(today);
+      document.getElementById("screen-limit-label").textContent = "Personal safe limit: " + formatTime(limits.safe);
 
-      var badge = document.getElementById("screen-badge");
-      var progress = document.getElementById("screen-progress");
+      const badge = document.getElementById("screen-badge");
+      const progress = document.getElementById("screen-progress");
+      progress.style.width = Math.min((today / limits.very_high) * 100, 100) + "%";
+      progress.className = "progress-fill";
 
-      var percent = Math.min((today / 1440) * 100, 100);
+      if (today >= limits.very_high) { badge.className = "warning-badge"; badge.textContent = "🚨 Very high — take action"; progress.classList.add("danger-fill"); }
+      else if (today >= limits.high) { badge.className = "warning-badge"; badge.textContent = "⚠️ High usage"; }
+      else if (today >= limits.safe) { badge.className = "warning-badge"; badge.textContent = "📵 Limit crossed"; }
+      else { badge.className = "ok-badge"; badge.textContent = "✅ Looking good"; }
 
-      if (progress) {
-        progress.style.width = percent + "%";
-        progress.className = "progress-fill";
-
-        if (today > 360) {
-          progress.classList.add("danger-fill");
-        }
-      }
-
-      if (today > 600) {
-        badge.className = "warning-badge";
-        badge.textContent = "🚨 Very high – reduce screen time!";
-      } else if (today > 360) {
-        badge.className = "warning-badge";
-        badge.textContent = "⚠️ High usage – take a break!";
-      } else if (today > 120) {
-        badge.className = "warning-badge";
-        badge.textContent = "🙁 Getting high – slow down";
-      } else {
-        badge.className = "ok-badge";
-        badge.textContent = "✅ Looking good";
-      }
-
-      var labels = log.map(function (r, i) {
-        return r.logged_on || ("Day " + (i + 1));
+      const css = getComputedStyle(document.body);
+      if (screenChart) screenChart.destroy();
+      screenChart = new Chart(document.getElementById("screenChart"), {
+        type: "line",
+        data: {
+          labels: log.map(r => r.logged_on.slice(5)),
+          datasets: [{
+            data: log.map(r => r.minutes),
+            borderColor: css.getPropertyValue("--primary").trim(),
+            backgroundColor: "rgba(59, 130, 246, 0.10)",
+            pointBackgroundColor: css.getPropertyValue("--accent").trim(),
+            borderWidth: 2, tension: 0.35, fill: true
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
       });
-
-      var values = log.map(function (r) {
-        return r.minutes;
-      });
-
-      if (!labels.length) {
-        labels = ["No data"];
-        values = [0];
-      }
-
-      if (screenChart) {
-        screenChart.data.labels = labels;
-        screenChart.data.datasets[0].data = values;
-        screenChart.update();
-      } else {
-        var ctx = document.getElementById("screenChart").getContext("2d");
-        screenChart = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: labels,
-            datasets: [{
-              label: "Screen Time",
-              data: values,
-              borderColor: "#e88fa0",
-              backgroundColor: "rgba(247,197,208,0.25)",
-              borderWidth: 2,
-              pointRadius: 4,
-              pointBackgroundColor: "#e88fa0",
-              tension: 0.4,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: function (context) {
-                    return formatTime(context.raw);
-                  }
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  callback: function (value) {
-                    return formatTime(value);
-                  }
-                }
-              },
-              x: {
-                grid: { display: false }
-              }
-            }
-          }
-        });
-      }
-
       updateSummary();
     }
 
-    function loadScreenTime() {
-      fetch("/api/screen-time")
-        .then(function (r) { return r.json(); })
-        .then(function (d) { updateScreenCard(d.log, d.today); })
-        .catch(function (e) { console.error("loadScreenTime:", e); });
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // TASKS
-    // ════════════════════════════════════════════════════════════════════════
-    function addTask() {
-      var subject = document.getElementById("task-subject").value.trim();
-      var deadline = document.getElementById("task-deadline").value;
-      if (!subject) { showToast("Please enter a subject!"); return; }
-      if (!deadline) { showToast("Please pick a deadline!"); return; }
-
-      fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: subject, deadline: deadline })
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          renderTasks(d.tasks);
-          document.getElementById("task-subject").value = "";
-          document.getElementById("task-deadline").value = "";
-          showToast("Task added! 📚");
-          loadRecommendation();
-        })
-        .catch(function (e) { console.error(e); });
-    }
-
-    function completeTask(taskId) {
-      // Instantly update UI — don't wait for server
-      var item = document.querySelector("[data-task-id='" + taskId + "']");
-      if (item) {
-        item.className = "task-item task-completed";
-        var btn = item.querySelector("button");
-        if (btn) btn.outerHTML = "<span class='task-status-label'>✅ completed</span>";
+    async function loadRecommendation() {
+      try {
+        const res = await fetch("/api/recommendation");
+        const data = await res.json();
+        latestProfile = data.profile || {};
+        latestShowFocus = !!data.show_focus_timer;
+        document.getElementById("recommendation-text").textContent = data.recommendation;
+        document.getElementById("personal-message").textContent = `Personalized for ${latestProfile.user_type || "general"} use, mainly for ${latestProfile.screen_purpose || "mixed"}.`;
+        document.getElementById("focus-card").classList.toggle("hidden", !latestShowFocus);
+        document.getElementById("weekly-focus-wrap").classList.toggle("hidden", !latestShowFocus);
+        if (data.mood) updateMoodUI(data.mood);
+      } catch (error) {
+        console.error("Recommendation error:", error);
+        document.getElementById("recommendation-text").textContent = "Unable to load recommendation. Please refresh.";
       }
-      playSound("task");
-      showToast("Task completed! ✅");
-
-      // Then sync with server in background
-      fetch("/api/tasks/" + taskId + "/complete", { method: "POST" })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          renderTasks(d.tasks);  // re-render with server confirmed data
-          loadRecommendation();
-          loadStreak();
-        })
-        .catch(function (e) { console.error(e); });
     }
 
-    function renderTasks(taskArray) {
-      window.latestTasks = taskArray || [];
-      var list = document.getElementById("task-list");
-      var stats = document.getElementById("task-stats");
-      var taskProgress = document.getElementById("task-progress");
+    function updateMoodUI(mood) {
+      document.getElementById("checkin-status").textContent = "Mood selected: " + mood;
+      document.querySelectorAll(".mood-row button").forEach(btn => btn.classList.toggle("active", btn.dataset.mood === mood));
+    }
 
+    async function saveCheckin(mood) {
+      try {
+        const res = await fetch("/api/checkin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mood, note: "" }) });
+        const data = await res.json();
+        if (data.error) return showToast(data.error);
+        updateMoodUI(mood);
+        showToast("Mood saved. Recommendation updated.");
+        loadRecommendation();
+        loadDashboardSummary();
+      } catch (error) {
+        console.error("Checkin error:", error);
+        showToast("⚠️ Could not save mood");
+      }
+    }
+
+    async function loadTasks() {
+      try {
+        const res = await fetch("/api/tasks");
+        const data = await res.json();
+        renderTasks(data.tasks);
+      } catch (error) {
+        console.error("Load tasks error:", error);
+        showToast("⚠️ Could not load tasks");
+      }
+    }
+
+    async function addTask() {
+      const subject = document.getElementById("task-subject").value.trim();
+      const deadline = document.getElementById("task-deadline").value;
+      if (!subject || !deadline) return showToast("Enter task and deadline.");
+      try {
+        const res = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject, deadline }) });
+        const data = await res.json();
+        document.getElementById("task-subject").value = "";
+        document.getElementById("task-deadline").value = "";
+        renderTasks(data.tasks); showToast("Task added."); loadRecommendation();
+      } catch (error) {
+        console.error("Add task error:", error);
+        showToast("⚠️ Could not add task");
+      }
+    }
+
+    async function completeTask(taskId) {
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/complete`, { method: "POST" });
+        const data = await res.json();
+        renderTasks(data.tasks); showToast("Task completed +10 XP"); loadRecommendation(); loadDashboardSummary();
+      } catch (error) {
+        console.error("Complete task error:", error);
+        showToast("⚠️ Could not complete task");
+      }
+    }
+
+    async function deleteTask(taskId) {
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/delete`, { method: "POST" });
+        const data = await res.json();
+        renderTasks(data.tasks); showToast("Task deleted."); loadRecommendation(); loadDashboardSummary();
+      } catch (error) {
+        console.error("Delete task error:", error);
+        showToast("⚠️ Could not delete task");
+      }
+    }
+
+    async function rescheduleTask(taskId) {
+      const newDate = prompt("Enter new deadline YYYY-MM-DD:");
+      if (!newDate) return;
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/reschedule`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deadline: newDate }) });
+        const data = await res.json();
+        renderTasks(data.tasks); showToast("Task rescheduled."); loadRecommendation();
+      } catch (error) {
+        console.error("Reschedule error:", error);
+        showToast("⚠️ Could not reschedule task");
+      }
+    }
+
+    function renderTasks(tasks) {
+      latestTasks = tasks || [];
+      const list = document.getElementById("task-list"), stats = document.getElementById("task-stats"), progress = document.getElementById("task-progress");
       list.innerHTML = "";
-
-      if (!taskArray || taskArray.length === 0) {
-        list.innerHTML = '<li class="task-empty">No tasks yet. Add one above!</li>';
-        stats.textContent = "0 pending tasks";
-        if (taskProgress) taskProgress.style.width = "0%";
-        return;
+      if (!latestTasks.length) {
+        list.innerHTML = '<li class="task-empty">No tasks yet. Start with one small task.</li>';
+        stats.textContent = "0 pending tasks"; progress.style.width = "0%"; updateSummary(); return;
       }
-
-      var pending = taskArray.filter(function (t) { return t.status === "pending"; }).length;
-      var completed = taskArray.filter(function (t) { return t.status === "completed"; }).length;
-      var total = taskArray.length;
-      var completionPercent = Math.round((completed / total) * 100);
-
-      stats.textContent = pending + " pending | " + completed + "/" + total + " completed";
-
-      if (taskProgress) {
-        taskProgress.style.width = completionPercent + "%";
-      }
-
-      taskArray.forEach(function (task) {
-        var li = document.createElement("li");
-        li.className = "task-item task-" + task.status;
-        li.setAttribute("data-task-id", task.id);
-
-        var statusIcon = "";
-        if (task.status === "completed") statusIcon = "✅";
-        if (task.status === "missed") statusIcon = "❌";
-        if (task.status === "pending") statusIcon = "⏳";
-
-        li.innerHTML =
-          '<span class="task-name">' + statusIcon + " " + task.subject + '</span>' +
-          '<span class="task-deadline">' + task.deadline + '</span>' +
-          (task.status === "pending"
-            ? '<button class="btn-small" onclick="completeTask(' + task.id + ')">Done</button>'
-            : '<button class="btn-small" onclick="rescheduleTask(' + task.id + ')">Reschedule</button>') +
-          '<button class="delete-btn" onclick="deleteTask(' + task.id + ')">✕</button>';
-
+      const pending = latestTasks.filter(t => t.status === "pending").length;
+      const completed = latestTasks.filter(t => t.status === "completed").length;
+      stats.textContent = `${pending} pending | ${completed}/${latestTasks.length} completed`;
+      progress.style.width = Math.round((completed / latestTasks.length) * 100) + "%";
+      latestTasks.forEach(task => {
+        const li = document.createElement("li"); li.className = "task-item task-" + task.status;
+        const icon = task.status === "completed" ? "✅" : task.status === "missed" ? "❌" : "⏳";
+        li.innerHTML = `<div><strong>${icon} ${task.subject}</strong><span>${task.deadline}</span></div><div class="task-actions">${task.status === "pending" ? `<button class="btn-outline" onclick="completeTask(${task.id})">Done</button>` : `<button class="btn-outline" onclick="rescheduleTask(${task.id})">Reschedule</button>`}<button class="delete-btn" onclick="deleteTask(${task.id})">✕</button></div>`;
         list.appendChild(li);
       });
       updateSummary();
     }
 
-    function loadTasks() {
-      fetch("/api/tasks")
-        .then(function (r) { return r.json(); })
-        .then(function (d) { renderTasks(d.tasks); })
-        .catch(function (e) { console.error("loadTasks:", e); });
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // FITNESS
-    // ════════════════════════════════════════════════════════════════════════
-    var exercises = [
-      { name: "5-min Stretch", time: "Perfect for a quick desk break", duration: 300 },
-      { name: "10-min Walk", time: "Step outside for fresh air", duration: 600 },
-      { name: "Desk Yoga", time: "Gentle seated stretches", duration: 300 },
-      { name: "20 Jumping Jacks", time: "Get the blood flowing!", duration: 120 },
-      { name: "Deep Breathing", time: "4-7-8 technique, 5 cycles", duration: 180 },
-      { name: "Eye Rest", time: "20-20-20 rule – look 20ft away", duration: 60 },
-      { name: "Neck Rolls", time: "Release tension in 2 minutes", duration: 120 },
-      { name: "Wall Push-ups", time: "10 reps, great for a quick reset", duration: 60 }
-    ];
-    var currentEx = 0;
-    var timerInt = null;
-    var timerSecs = 0;
-
-    function nextExercise() {
-      currentEx = (currentEx + 1) % exercises.length;
-      var ex = exercises[currentEx];
+    function showExercise() {
+      const ex = exercises[currentExercise];
       document.getElementById("exercise-name").textContent = ex.name;
       document.getElementById("exercise-time").textContent = ex.time;
-      stopTimer();
-      showToast("Next: " + ex.name + " 🌿");
     }
 
-    function startTimer() {
-      if (timerInt) { stopTimer(); return; }
-      timerSecs = exercises[currentEx].duration;
-      document.getElementById("timer-display").style.display = "block";
-      document.getElementById("timer-btn").textContent = "Stop ⏹️";
+    function nextExercise() {
+      if (fitnessTimer) {
+        showToast("Stop current timer first!");
+        return;
+      }
+      currentExercise = (currentExercise + 1) % exercises.length;
+      showExercise();
+      showToast("New activity selected.");
+    }
 
-      timerInt = setInterval(function () {
-        timerSecs--;
-        var m = Math.floor(timerSecs / 60);
-        var s = timerSecs % 60;
-        document.getElementById("timer-count").textContent =
-          (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-        if (timerSecs <= 0) {
-          stopTimer();
-          playSound("timer");
+    function playCompletionSound() {
+      try {
+        initAudio();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.value = 880;
+        gain.gain.value = 0.06;
+        osc.start();
+        setTimeout(() => { osc.stop(); }, 350);
+      } catch (e) { console.log("Sound unavailable", e); }
+    }
+
+    // FIXED: Start/Stop timer with same button
+    function startTimer() {
+      if (latestFitnessDone) {
+        showToast("You already completed fitness today! Come back tomorrow 🎉");
+        return;
+      }
+
+      // If timer is running, STOP it
+      if (fitnessTimer) {
+        stopTimer();
+        return;
+      }
+
+      // Start new timer
+      fitnessSeconds = exercises[currentExercise].duration;
+      document.getElementById("timer-display").classList.remove("hidden");
+      document.getElementById("timer-count").textContent = formatClock(fitnessSeconds);
+      document.getElementById("timer-btn").textContent = "Stop Timer";
+      document.getElementById("fitness-status").textContent = "Timer running — complete it to mark done.";
+
+      fitnessTimer = setInterval(() => {
+        if (fitnessSeconds > 0) {
+          fitnessSeconds--;
+          document.getElementById("timer-count").textContent = formatClock(fitnessSeconds);
+
+          if (fitnessSeconds <= 0) {
+            clearInterval(fitnessTimer);
+            fitnessTimer = null;
+            markFitnessDone(true);
+          }
         }
       }, 1000);
     }
 
     function stopTimer() {
-      clearInterval(timerInt);
-      timerInt = null;
-      document.getElementById("timer-display").style.display = "none";
-      document.getElementById("timer-btn").textContent = "Start Timer ⏱️";
+      if (!fitnessTimer) return;
+
+      clearInterval(fitnessTimer);
+      fitnessTimer = null;
+      document.getElementById("timer-display").classList.add("hidden");
+      document.getElementById("timer-btn").textContent = "Start Timer";
+
+      if (fitnessSeconds > 0) {
+        document.getElementById("fitness-status").textContent = "Stopped early — not marked done. Start over to complete.";
+        showToast("Timer stopped early. Complete full duration to earn XP!");
+      }
     }
 
-    function markFitnessDone() {
-      var exName = exercises[currentEx].name;
-      fetch("/api/fitness", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exercise: exName })
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          // immediately complete the just-added entry
-          if (d.fitness && d.fitness.length > 0) {
-            var latest = d.fitness[0];
-            return fetch("/api/fitness/" + latest.id + "/complete", { method: "POST" });
+    async function markFitnessDone(autoCompleted) {
+      if (!autoCompleted) {
+        showToast("Complete the timer first to mark fitness done.");
+        return;
+      }
+
+      if (latestFitnessDone) {
+        showToast("Fitness already completed today!");
+        return;
+      }
+
+      const exercise = exercises[currentExercise].name;
+      try {
+        const res = await fetch("/api/fitness", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ exercise })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          showToast(data.error);
+          return;
+        }
+
+        latestFitnessDone = true;
+        document.getElementById("fitness-status").textContent = "✅ Completed today";
+        document.getElementById("timer-display").classList.add("hidden");
+        document.getElementById("timer-btn").textContent = "Start Timer";
+
+        playCompletionSound();
+        showToast("Fitness break completed +15 XP");
+        loadRecommendation();
+        loadDashboardSummary();
+        updateSummary();
+      } catch (error) {
+        console.error("Fitness error:", error);
+        showToast("⚠️ Could not save fitness completion");
+      }
+    }
+
+    async function loadFitness() {
+      try {
+        const res = await fetch("/api/fitness");
+        const data = await res.json();
+        latestFitnessDone = data.fitness && data.fitness.length > 0;
+        if (latestFitnessDone) {
+          document.getElementById("fitness-status").textContent = "✅ Completed today";
+        } else {
+          document.getElementById("fitness-status").textContent = "Complete the timer to mark fitness done";
+        }
+        updateSummary();
+      } catch (error) {
+        console.error("Load fitness error:", error);
+      }
+    }
+
+    // FIXED: Focus timer with stop button
+    function startFocusMode() {
+      if (!latestShowFocus) return showToast("Focus timer is hidden for this profile.");
+      if (focusTimer) {
+        showToast("Focus timer already running!");
+        return;
+      }
+
+      focusTimer = setInterval(() => {
+        if (focusSeconds > 0) {
+          focusSeconds--;
+          document.getElementById("focus-time").textContent = formatClock(focusSeconds);
+
+          if (focusSeconds <= 0) {
+            clearInterval(focusTimer);
+            focusTimer = null;
+            completeFocusMode();
           }
-        })
-        .then(function (r) { if (r) return r.json(); })
-        .then(function (d) {
-          stopTimer();
-          document.getElementById("fitness-status").textContent = "✅ Completed today!";
-          document.getElementById("fitness-status").style.color = "#7bb877";
-          showToast(exName + " marked as done! 💪");
-          loadRecommendation();
-          loadStreak();
-        })
-        .catch(function (e) { console.error(e); });
+        }
+      }, 1000);
+
+      document.getElementById("focus-status").textContent = "Focus session running...";
+      showToast("Study focus timer started.");
     }
 
-    function loadFitness() {
-      fetch("/api/fitness")
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          var statusEl = document.getElementById("fitness-status");
-          var done = d.fitness && d.fitness.some(function (f) { return f.status === "completed"; });
-          if (done) {
-            statusEl.textContent = "✅ Completed today!";
-            statusEl.style.color = "#7bb877";
-          } else {
-            statusEl.textContent = "Not started today";
-            statusEl.style.color = "";
-          }
-          updateSummary();
-        })
-        .catch(function (e) { console.error("loadFitness:", e); });
-
+    function stopFocusMode() {
+      if (focusTimer) {
+        clearInterval(focusTimer);
+        focusTimer = null;
+        showToast("Focus timer stopped.");
+        resetFocusMode();
+      }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // RECOMMENDATION
-    // ════════════════════════════════════════════════════════════════════════
-    function loadRecommendation() {
-      fetch("/api/recommendation")
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          document.getElementById("recommendation-text").textContent = d.recommendation;
-        })
-        .catch(function (e) { console.error("loadRecommendation:", e); });
+    async function completeFocusMode() {
+      if (focusTimer) {
+        clearInterval(focusTimer);
+        focusTimer = null;
+      }
+
+      const minutesElapsed = 25 - Math.floor(focusSeconds / 60);
+      if (minutesElapsed < 1) {
+        showToast("Focus session too short! Complete at least 1 minute.");
+        resetFocusMode();
+        return;
+      }
+
+      try {
+        await fetch("/api/focus-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ minutes: minutesElapsed })
+        });
+        document.getElementById("focus-status").textContent = `Completed ${minutesElapsed} min focus session +${Math.floor(minutesElapsed * 0.8)} XP`;
+        showToast(`Focus session completed! +${Math.floor(minutesElapsed * 0.8)} XP`);
+        resetFocusMode();
+        loadDashboardSummary();
+        loadRecommendation();
+      } catch (error) {
+        console.error("Focus session error:", error);
+        showToast("⚠️ Could not save focus session");
+        resetFocusMode();
+      }
     }
 
-    function deleteTask(taskId) {
-      if (!confirm("Delete this task?")) return;
-
-      fetch("/api/tasks/" + taskId + "/delete", { method: "POST" })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          renderTasks(d.tasks);
-          showToast("Task deleted");
-          loadRecommendation();
-        })
-        .catch(function (e) { console.error(e); });
+    function resetFocusMode() {
+      if (focusTimer) {
+        clearInterval(focusTimer);
+        focusTimer = null;
+      }
+      focusSeconds = 25 * 60;
+      document.getElementById("focus-time").textContent = "25:00";
+      document.getElementById("focus-status").textContent = "No focus session completed yet";
     }
 
+    // Initialize audio on first click anywhere
+    document.body.addEventListener('click', function firstClick() {
+      initAudio();
+      document.body.removeEventListener('click', firstClick);
+    });
 
-    function rescheduleTask(taskId) {
-      var newDate = prompt("Enter new deadline in YYYY-MM-DD format:");
-
-      if (!newDate) return;
-
-      fetch("/api/tasks/" + taskId + "/reschedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deadline: newDate })
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          renderTasks(d.tasks);
-          showToast("Task rescheduled");
-          loadRecommendation();
-        })
-        .catch(function (e) { console.error(e); });
-    }
-
-
-    function loadQuote() {
-      var quotes = [
-        "Small steps every day lead to big results.",
-        "Focus on progress, not perfection.",
-        "Your future self will thank you.",
-        "Discipline beats motivation.",
-        "One focused hour is better than five distracted hours.",
-        "Take care of your mind and body together."
-      ];
-
-      var today = new Date();
-      var index = today.getDate() % quotes.length;
-
-      document.getElementById("quote-box").textContent = "💡 " + quotes[index];
-    }
-
-    function loadStreak() {
-      fetch("/api/streak")
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          var box = document.getElementById("streak-box");
-          if (box) {
-            box.textContent = "🔥 Streak: " + d.streak + " day" + (d.streak !== 1 ? "s" : "");
-          }
-        })
-        .catch(function (e) { console.error("loadStreak:", e); });
-    }
-    // ════════════════════════════════════════════════════════════════════════
-    // INIT — runs when page loads
-    // ════════════════════════════════════════════════════════════════════════
-    window.onload = function () {
-      loadQuote();
+    document.addEventListener("DOMContentLoaded", () => {
+      applyTheme();
+      updateReminderButton();
+      startSmartReminderLoop();
+      dailyVisitReminder();
+      showExercise();
       loadScreenTime();
       loadTasks();
       loadFitness();
       loadRecommendation();
-      loadStreak();
-    };
-
+      loadDashboardSummary();
+    });
   </script>
 </body>
 

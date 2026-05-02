@@ -1,33 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FocusFit – Sign Up</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
+
 <body class="auth-page">
   <div class="auth-card">
-    <div class="logo">🌸 FocusFit</div>
-    <div class="tagline">Start your productivity journey today</div>
+    <div class="logo">FocusFit</div>
+    <div class="tagline">Create your personalized focus and wellness profile</div>
+        <button type="button" class="auth-theme-btn" onclick="toggleAuthTheme()" id="auth-theme-btn">
+  🌙 Dark
+</button>
     <h2>Create account</h2>
-    {% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
     <form method="POST" action="/signup">
       <div class="form-group">
         <label>Full Name</label>
         <input type="text" name="name" placeholder="Your Name" required />
       </div>
+
       <div class="form-group">
         <label>Email</label>
         <input type="email" name="email" placeholder="you@example.com" required />
       </div>
+
       <div class="form-group">
         <label>Password</label>
         <input type="password" name="password" placeholder="Choose a password" required />
       </div>
+
+      <div class="form-group">
+        <label>Age</label>
+        <input type="number" name="age" placeholder="Enter your age" min="10" max="100" required />
+      </div>
+
+      <div class="form-group">
+        <label for="user_type">User Type</label>
+        <select id="user_type" name="user_type" required>
+          <option value="student">Student</option>
+          <option value="working">Working Professional</option>
+          <option value="teen">Teen / School Student</option>
+          <option value="older_adult">Older Adult</option>
+          <option value="general">General User</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="screen_purpose">Main Screen Purpose</label>
+        <select id="screen_purpose" name="screen_purpose" required>
+          <option value="study">Study</option>
+          <option value="work">Work</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="mixed">Mixed Use</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fitness_level">Fitness Level</label>
+        <select id="fitness_level" name="fitness_level" required>
+          <option value="light">Light</option>
+          <option value="medium">Medium</option>
+          <option value="active">Active</option>
+        </select>
+      </div>
+
       <button type="submit" class="btn-primary">Create Account</button>
     </form>
-    <div class="auth-link">Already have an account? <a href="/login">Log in</a></div>
+
+    <div class="auth-link">
+      Already have an account? <a href="/login">Log in</a>
+    </div>
   </div>
+<script>
+  function applyAuthTheme() {
+    const savedTheme = localStorage.getItem("focusfit-theme");
+    const btn = document.getElementById("auth-theme-btn");
+
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark-mode");
+      if (btn) btn.textContent = "☀️ Light";
+    } else {
+      document.body.classList.remove("dark-mode");
+      if (btn) btn.textContent = "🌙 Dark";
+    }
+  }
+
+  function toggleAuthTheme() {
+    const isDark = document.body.classList.toggle("dark-mode");
+    localStorage.setItem("focusfit-theme", isDark ? "dark" : "light");
+    applyAuthTheme();
+  }
+
+  document.addEventListener("DOMContentLoaded", applyAuthTheme);
+</script>  
 </body>
+
 </html>
