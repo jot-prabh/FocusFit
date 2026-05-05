@@ -1,32 +1,33 @@
-# FocusFit – Smart Personalized Focus & Wellness System
+# FocusFit – Smart Focus & Wellness System
 
-FocusFit is a Flask + SQLite web app for screen-time awareness, study planning, mood-based recommendations, wellness breaks, and optional study focus sessions.
+## 🚀 Overview
 
-## Main changes in this version
+FocusFit is a smart productivity and wellness application designed to help users improve focus, reduce distractions, and maintain digital well-being through personalized tracking and insights.
 
-- Cleaner dashboard with fewer cards and more spacing
-- Daily check-in merged inside recommendation section
-- Human, contextual recommendation logic
-- Personalized limits based on user type, screen purpose, age context, and fitness level
-- Fitness break now requires completing the timer before marking done
-- Timer completion sound added
-- Study Focus Timer is shown only for study/work suitable profiles
-- Weekly report simplified
-- Dark/light theme retained
+## 💡 Features
 
-## Files to replace
+* Personalized focus tracking
+* Screen time monitoring
+* Daily check-ins
+* Smart recommendations based on user behavior
+* Clean and responsive UI
 
-- `app.py`
-- `database.py`
-- `templates/dashboard.html`
-- `static/css/style.css`
-- Optional: `README.md`
+## 🛠 Tech Stack
 
-## Run locally
+* HTML, CSS, JavaScript
+* Python (Flask)
+* GitHub + Render (Deployment)
 
-```bash
-pip install -r requirements.txt
-python app.py
-```
+## 📸 Screenshots
 
-Open: `http://127.0.0.1:5000`
+(Add 2–3 images here)
+
+## ▶️ Live Demo
+
+https://focusatfit.onrender.com
+
+## 📌 Future Improvements
+
+* AI-based recommendations
+* User authentication system
+* Advanced analytics dashboard
